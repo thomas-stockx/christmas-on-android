@@ -20,6 +20,7 @@ import android.util.Log;
 import android.view.View;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.widget.Toast;
 
 import com.jrummyapps.android.colorpicker.ColorPickerDialog;
 import com.jrummyapps.android.colorpicker.ColorPickerDialogListener;
@@ -56,7 +57,7 @@ public class MainActivity extends AppCompatActivity implements ColorPickerDialog
         fabShare.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                ShareImage();
+                shareImage();
             }
         });
 
@@ -101,6 +102,8 @@ public class MainActivity extends AppCompatActivity implements ColorPickerDialog
         // don't do anything
     }
 
+
+    /** TODO: Merge SaveImageToDisk and ShareImage methods, or at least make them share code */
     public void saveImageToDisk() {
         if (isStoragePermissionGranted() == false)
             return;
@@ -116,21 +119,23 @@ public class MainActivity extends AppCompatActivity implements ColorPickerDialog
 
         try {
             fos = new FileOutputStream(targetPath);
-        } catch (FileNotFoundException e) {
 
+            b.compress(Bitmap.CompressFormat.PNG, 95, fos);
+
+            Intent intent = new Intent();
+            intent.setAction(Intent.ACTION_VIEW);
+            Uri uri = FileProvider.getUriForFile(this, AUTHORITY, targetPath);
+            intent.setDataAndType(uri, "image/*");
+            intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+            startActivity(intent);
+        } catch (FileNotFoundException e) {
+            Toast.makeText(this, "Something went wrong with saving the image to disk", Toast.LENGTH_SHORT);
         }
 
-        b.compress(Bitmap.CompressFormat.PNG, 95, fos);
 
-        Intent intent = new Intent();
-        intent.setAction(Intent.ACTION_VIEW);
-        Uri uri = FileProvider.getUriForFile(this, AUTHORITY, targetPath);
-        intent.setDataAndType(uri, "image/*");
-        intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
-        startActivity(intent);
     }
 
-    public void ShareImage() {
+    public void shareImage() {
         if (isStoragePermissionGranted() == false)
             return;
 
@@ -145,21 +150,20 @@ public class MainActivity extends AppCompatActivity implements ColorPickerDialog
 
         try {
             fos = new FileOutputStream(targetPath);
+
+            b.compress(Bitmap.CompressFormat.PNG, 95, fos);
+
+            Intent intent = new Intent();
+            intent.setAction(Intent.ACTION_SEND);
+            intent.putExtra(Intent.EXTRA_STREAM, Uri.fromFile(targetPath));
+            intent.setType("image/*");
+            intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+
+            startActivity(Intent.createChooser(intent, "Share screenshot via..."));
         } catch (FileNotFoundException e) {
-
+            Toast.makeText(this, "Something went wrong with saving the image to disk", Toast.LENGTH_SHORT);
         }
-
-        b.compress(Bitmap.CompressFormat.PNG, 95, fos);
-
-        Intent intent = new Intent();
-        intent.setAction(Intent.ACTION_SEND);
-        intent.putExtra(Intent.EXTRA_STREAM, Uri.fromFile(targetPath));
-        intent.setType("image/*");
-        intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
-
-        startActivity(Intent.createChooser(intent, "Share screenshot via..."));
     }
-
 
     public  boolean isStoragePermissionGranted() {
         if (Build.VERSION.SDK_INT >= 23) {
