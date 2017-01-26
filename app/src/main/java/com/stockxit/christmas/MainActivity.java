@@ -1,21 +1,15 @@
 package com.stockxit.christmas;
 
 import android.Manifest;
-import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
-import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
-import android.os.Environment;
 import android.support.annotation.ColorInt;
 import android.support.design.widget.FloatingActionButton;
-import android.support.design.widget.Snackbar;
 import android.support.v4.app.ActivityCompat;
-import android.support.v4.content.FileProvider;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
-import android.text.format.DateFormat;
 import android.util.Log;
 import android.view.View;
 import android.view.Menu;
@@ -24,6 +18,8 @@ import android.widget.Toast;
 
 import com.jrummyapps.android.colorpicker.ColorPickerDialog;
 import com.jrummyapps.android.colorpicker.ColorPickerDialogListener;
+import com.stockxit.christmas.utils.FileUtils;
+import com.stockxit.christmas.utils.IntentUtils;
 import com.stockxit.christmas.views.DrawView;
 
 import java.io.File;
@@ -32,7 +28,6 @@ import java.io.FileOutputStream;
 
 public class MainActivity extends AppCompatActivity implements ColorPickerDialogListener {
     private static final String TAG = "MainActivity";
-    private static final String AUTHORITY="com.stockxit.christmas.provider";
 
     public DrawView mDrawView;
 
@@ -112,22 +107,14 @@ public class MainActivity extends AppCompatActivity implements ColorPickerDialog
         Bitmap b = mDrawView.getDrawingCache();
         FileOutputStream fos = null;
 
-        File targetPath = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES)
-                + "/christmas_tree_"
-                + DateFormat.format("yyyy-MM-dd-kk-mm-ss", System.currentTimeMillis())
-                + ".png");
+        File targetPath = FileUtils.generateImageFile();
 
         try {
             fos = new FileOutputStream(targetPath);
 
             b.compress(Bitmap.CompressFormat.PNG, 95, fos);
 
-            Intent intent = new Intent();
-            intent.setAction(Intent.ACTION_VIEW);
-            Uri uri = FileProvider.getUriForFile(this, AUTHORITY, targetPath);
-            intent.setDataAndType(uri, "image/*");
-            intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
-            startActivity(intent);
+            IntentUtils.openImageIntent(this, targetPath);
         } catch (FileNotFoundException e) {
             Toast.makeText(this, "Something went wrong with saving the image to disk", Toast.LENGTH_SHORT);
         }
@@ -143,23 +130,14 @@ public class MainActivity extends AppCompatActivity implements ColorPickerDialog
         Bitmap b = mDrawView.getDrawingCache();
         FileOutputStream fos = null;
 
-        File targetPath = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES)
-                + "/christmas_tree_"
-                + DateFormat.format("yyyy-MM-dd-kk-mm-ss", System.currentTimeMillis())
-                + ".png");
+        File targetPath = FileUtils.generateImageFile();
 
         try {
             fos = new FileOutputStream(targetPath);
 
             b.compress(Bitmap.CompressFormat.PNG, 95, fos);
 
-            Intent intent = new Intent();
-            intent.setAction(Intent.ACTION_SEND);
-            intent.putExtra(Intent.EXTRA_STREAM, Uri.fromFile(targetPath));
-            intent.setType("image/*");
-            intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
-
-            startActivity(Intent.createChooser(intent, "Share screenshot via..."));
+            IntentUtils.shareImageIntent(this, targetPath);
         } catch (FileNotFoundException e) {
             Toast.makeText(this, "Something went wrong with saving the image to disk", Toast.LENGTH_SHORT);
         }
